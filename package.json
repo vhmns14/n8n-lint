@@ -1,0 +1,61 @@
+{
+  "name": "n8n-lint",
+  "version": "0.1.0",
+  "description": "Static linter for n8n workflow JSON exports: leaked secrets, unauthenticated webhooks, missing error handling, and other mistakes, caught before they ship.",
+  "keywords": [
+    "n8n",
+    "lint",
+    "linter",
+    "workflow",
+    "automation",
+    "security",
+    "sarif",
+    "github-action"
+  ],
+  "license": "MIT",
+  "author": "vahmi sofyan <140510368+vhmns14@users.noreply.github.com>",
+  "homepage": "https://github.com/vhmns14/n8n-lint#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vhmns14/n8n-lint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vhmns14/n8n-lint/issues"
+  },
+  "type": "module",
+  "bin": {
+    "n8n-lint": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "docs": "node scripts/gen-docs.mjs",
+    "lint:examples": "node dist/cli.js examples --fail-on none",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

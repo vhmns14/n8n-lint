@@ -1,0 +1,145 @@
+{
+  "name": "Lead Capture",
+  "description": "Receives website leads over an authenticated webhook, scores them with an LLM, and posts hot leads to Telegram.",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "b1",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "3f1d9c2e-0000-4000-8000-000000000002",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Xy12",
+          "name": "Lead webhook secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body ?? {};\nreturn [{ json: { email: String(b.email ?? '').trim(), message: String(b.message ?? '').slice(0, 2000) } }];"
+      },
+      "id": "b2",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: $json.message }] }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b3",
+      "name": "Score Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "openAiApi": {
+          "id": "Ab34",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.LEADS_CHAT_ID }}",
+        "text": "=New lead: {{ $('Normalize Lead').first().json.email }}",
+        "additionalFields": {}
+      },
+      "id": "b4",
+      "name": "Post to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "credentials": {
+        "telegramApi": {
+          "id": "Cd56",
+          "name": "Leads bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "Score Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Lead": {
+      "main": [
+        [
+          {
+            "node": "Post to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "errAlertTelegram"
+  },
+  "pinData": {},
+  "tags": [
+    {
+      "name": "leads"
+    },
+    {
+      "name": "production"
+    }
+  ]
+}

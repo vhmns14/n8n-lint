@@ -1,0 +1,53 @@
+{
+  "id": "errAlertTelegram",
+  "name": "Error Alert to Telegram",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "66c22a9f-192c-5024-b6f8-32c52ca518f6",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=⚠️ Workflow failed: {{ $json.workflow.name }}\nNode: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "21e4d128-8182-5e8d-b905-a5f47a30ca0e",
+      "name": "Alert Owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Alert Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

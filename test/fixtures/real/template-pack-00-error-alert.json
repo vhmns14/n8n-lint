@@ -1,0 +1,57 @@
+{
+  "id": "tplErrorAlert",
+  "name": "Template Pack - Error Alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d5bd5ed0-659a-5718-9e28-9cf33bfd1396",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=⚠️ Workflow gagal: {{ $json.workflow.name }}\nNode: {{ $json.execution.lastNodeExecuted }}\nError: {{ String($json.execution.error.message).replace(/</g,'&lt;') }}\n{{ $json.execution.url }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "c7562d71-6be8-5b2b-8a25-ad32875d8723",
+      "name": "Alert Owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Alert Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

@@ -1,0 +1,44 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`real-world workflows > error-alert-telegram.json: parses, has no errors, and matches the recorded findings 1`] = `
+[
+  "info hygiene/missing-metadata",
+]
+`;
+
+exports[`real-world workflows > telegram-ai-lead-intake.json: parses, has no errors, and matches the recorded findings 1`] = `
+[
+  "info hygiene/missing-metadata",
+]
+`;
+
+exports[`real-world workflows > template-pack-00-error-alert.json: parses, has no errors, and matches the recorded findings 1`] = `
+[
+  "info hygiene/missing-metadata",
+]
+`;
+
+exports[`real-world workflows > template-pack-01-ai-short-video-generator.json: parses, has no errors, and matches the recorded findings 1`] = `
+[
+  "info hygiene/missing-metadata",
+  "warning reliability/disabled-node Render Video (Creatomate, optional)",
+]
+`;
+
+exports[`real-world workflows > template-pack-02-video-summarizer-clip-finder.json: parses, has no errors, and matches the recorded findings 1`] = `
+[
+  "info hygiene/missing-metadata",
+]
+`;
+
+exports[`real-world workflows > template-pack-03-project-tracker-standup.json: parses, has no errors, and matches the recorded findings 1`] = `
+[
+  "info hygiene/missing-metadata",
+]
+`;
+
+exports[`real-world workflows > template-pack-04-office-inbox-assistant.json: parses, has no errors, and matches the recorded findings 1`] = `
+[
+  "info hygiene/missing-metadata",
+]
+`;

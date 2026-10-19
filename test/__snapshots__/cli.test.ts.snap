@@ -1,0 +1,57 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CLI > prints the bad example report (snapshot) and exits 1 1`] = `
+"examples/bad-workflow.json
+  2:11    info     Workflow "Lead Capture (DO NOT SHIP)" has no description (or sticky note) and no tags.  hygiene/missing-metadata
+                   ↳ Document what it does and tag it.
+  5:21    warning  Webhook "Webhook1" accepts unauthenticated requests on /lead-intake.  security/webhook-no-auth
+                   ↳ Use Header Auth, Basic Auth, or JWT Auth, or verify the sender's signature right after the trigger.
+  11:15   info     "Webhook1" still has its default name.  hygiene/default-node-name
+                   ↳ Name it after what it does.
+  13:22   info     "Webhook1" uses webhook v1; latest is v2.2.  hygiene/outdated-type-version
+                   ↳ Re-add the node at the current version and re-test.
+  22:19   error    OpenAI API key in \`jsCode\` of "Code" (sk-p…qX (56 chars)).  security/hardcoded-secret
+                   ↳ Rotate it, then move it into an n8n credential and reference that instead.
+  22:19   error    Code node "Code" uses eval().  security/dangerous-code
+                   ↳ Avoid dynamic code execution and host access in workflow code.
+  22:19   error    Code node "Code" uses require('child_process').  security/dangerous-code
+                   ↳ Avoid dynamic code execution and host access in workflow code.
+  25:15   info     "Code" still has its default name.  hygiene/default-node-name
+                   ↳ Name it after what it does.
+  39:15   warning  "Legacy Transform" uses the deprecated function node; use Code instead.  hygiene/deprecated-node
+                   ↳ Replace with Code.
+  46:5    warning  HTTP Request "HTTP Request1" has no retry on fail and no timeout.  reliability/http-resilience
+                   ↳ Enable Retry On Fail in Settings and set Options → Timeout.
+  49:16   warning  "HTTP Request1" calls http://crm.acme-corp.io without TLS.  security/insecure-http
+                   ↳ Use https://.
+  55:24   error    "HTTP Request1" sends "Authorization" as a hand-typed parameter (Bear…a0 (39 chars)) instead of a credential.  security/embedded-credentials
+                   ↳ Use a Header Auth / Query Auth credential and remove the literal value.
+  65:15   info     "HTTP Request1" still has its default name.  hygiene/default-node-name
+                   ↳ Name it after what it does.
+  67:22   info     "HTTP Request1" uses httpRequest v3; latest is v4.5.  hygiene/outdated-type-version
+                   ↳ Re-add the node at the current version and re-test.
+  73:5    warning  HTTP Request "Notify Ops" has no timeout.  reliability/http-resilience
+                   ↳ Enable Retry On Fail in Settings and set Options → Timeout.
+  76:16   error    Password in URL in \`url\` of "Notify Ops" (Pa55…4! (14 chars)).  security/hardcoded-secret
+                   ↳ Rotate it, then move it into an n8n credential and reference that instead.
+  97:15   info     "Telegram" still has its default name.  hygiene/default-node-name
+                   ↳ Name it after what it does.
+  105:24  error    "Telegram" carries credential data inline (telegramApi: accessToken). Exports should only reference credentials by id and name.  security/embedded-credentials
+                   ↳ Remove the inline fields and reference a stored n8n credential.
+  130:15  error    Node name "Format Reply" is used more than once.  reliability/duplicate-node-name
+                   ↳ Give every node a unique name.
+  150:19  warning  "Debug Logger" is disabled.  reliability/disabled-node
+                   ↳ Remove it or enable it. If it is intentionally optional, say so in its notes and disable this rule there.
+  152:5   warning  "Old Sheets Export" is not connected to anything.  reliability/unreachable-node
+                   ↳ Connect it or delete it.
+  178:19  warning  Code node "Clean CSV" is 194 lines / 13140 chars (limit 150 lines / 8000 chars).  reliability/large-code-node
+                   ↳ Split it or move the logic into a sub-workflow.
+  275:15  warning  No error workflow set, and 4 node(s) that call external services have no error handling: "HTTP Request1", "Notify Ops", "Telegram", "Old Sheets Export".  reliability/unhandled-errors
+                   ↳ Set settings.errorWorkflow, or set onError on those nodes.
+  278:14  warning  Pinned data on 1 node(s) ("Webhook1"), 1 item(s) in total.  security/pin-data
+                   ↳ Run with --fix to strip pinData.
+
+✖ 24 problems (7 errors, 10 warnings, 7 info) in 1 workflow(s), 1 file(s).
+  3 can be fixed with --fix (see --help for opt-in fixes).
+"
+`;

@@ -1,0 +1,375 @@
+{
+  "id": "tgAiLeadIntake01",
+  "name": "Telegram AI Lead Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "e9e78887-e595-5216-8234-6901502a0791",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "f7084b41-5b8d-56b6-b7d2-2bafec018da5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Edit these two values after importing.\nconst ADMIN_CHAT_ID = 'YOUR_TELEGRAM_CHAT_ID';\nconst MODEL = 'gpt-4o-mini';\nconst MAX_CHARS = 2000; // caps LLM cost per message\nconst msg = $input.first().json.message || {};\nconst text = (msg.text || '').trim();\nreturn [{ json: {\n  admin_chat_id: ADMIN_CHAT_ID,\n  model: MODEL,\n  chat_id: msg.chat?.id,\n  chat_type: msg.chat?.type || null,\n  username: msg.from?.username || null,\n  first_name: msg.from?.first_name || null,\n  text: text.slice(0, MAX_CHARS),\n  truncated: text.length > MAX_CHARS,\n  message_id: msg.message_id,\n  received_at: new Date((msg.date || Date.now() / 1000) * 1000).toISOString(),\n} }];"
+      },
+      "id": "ace222b5-e6db-56ad-abb2-0bbe773ef514",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Drops anything we should not spend LLM tokens on. Returning [] ends the run.\nconst LIMIT = 5, WINDOW_MS = 10 * 60 * 1000; // 5 messages per chat per 10 min\nconst j = $input.first().json;\nif (j.chat_type !== 'private' || !j.chat_id || !j.text) return [];\nconst store = $getWorkflowStaticData('global');\nconst now = Date.now();\nstore.rate = store.rate || {};\nfor (const [id, hits] of Object.entries(store.rate)) {\n  const fresh = hits.filter((t) => now - t < WINDOW_MS);\n  if (fresh.length) store.rate[id] = fresh; else delete store.rate[id];\n}\nconst hits = store.rate[j.chat_id] || [];\nif (hits.length >= LIMIT) return [];\nstore.rate[j.chat_id] = [...hits, now];\nreturn [{ json: j }];"
+      },
+      "id": "fe48e842-7e9a-5c98-9aa4-126d871f2f29",
+      "name": "Guard (private, text, rate limit)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "ef60dba3-71d0-508f-8064-965736f10d43",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "77c78914-19b4-54ad-b811-458c44d767b2",
+      "name": "Is /start?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "Hi! Tell me what you'd like to automate (tools you use, what's slow today, budget, timeline) and I'll get back to you.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "96d64dc4-38bb-5b34-a52f-039bc4bef922",
+      "name": "Send Welcome",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.model, temperature: 0, max_tokens: 500, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: \"You are the intake assistant for an AI automation freelancer. Read the Telegram message and return ONLY a JSON object with keys: intent (one of: lead, question, spam), name, company, email, need, budget, urgency (low|medium|high), lead_score (0-100 integer), summary (one sentence), reply (a short, friendly reply to send back to the sender, in the sender's language). Use null for unknown fields. A lead is someone describing work they want done.\" }, { role: 'user', content: $json.text } ] }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "98c38da8-cdc8-50a4-aafc-384152e5e939",
+      "name": "LLM Classify & Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        420
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Defensive parsing: never let a malformed LLM answer crash the flow.\nconst ctx = $('Config').first().json;\nlet data = {};\ntry {\n  data = JSON.parse($input.first().json.choices[0].message.content);\n} catch (e) {\n  data = { intent: 'question', summary: 'Unparseable LLM output', reply: \"Thanks! I'll get back to you shortly.\" };\n}\n// Whitelist model fields so a prompt-injected answer can never override\n// trusted context such as chat_id or admin_chat_id.\nconst FIELDS = ['intent', 'name', 'company', 'email', 'need', 'budget', 'urgency', 'lead_score', 'summary', 'reply'];\ndata = Object.fromEntries(FIELDS.map((k) => [k, data && typeof data === 'object' ? data[k] ?? null : null]));\nif (typeof data.reply !== 'string' || !data.reply.trim()) data.reply = \"Thanks! I'll get back to you shortly.\";\ndata.reply = data.reply.slice(0, 1000);\nconst allowed = ['lead', 'question', 'spam'];\nif (!allowed.includes(data.intent)) data.intent = 'question';\nconst score = Number.parseInt(data.lead_score, 10);\ndata.lead_score = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;\nreturn [{ json: { ...data, ...ctx } }];"
+      },
+      "id": "2208371d-6eed-5373-a548-4adad5a316a2",
+      "name": "Parse LLM Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "65d26a8d-4fd8-560f-a91e-382b9f132e14",
+      "name": "Reply to Sender",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "89059436-d2f6-52dc-88dc-bf7e7ddeece1",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "lead",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "99421390-5f11-524e-aafb-b1bbef656a2d",
+      "name": "Is Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sanitise before writing to Sheets: stop formula injection (=HYPERLINK, =IMPORTXML...)\n// and cap lengths, because these values come from strangers and an LLM.\nconst clean = (v, max = 500) => {\n  if (v === null || v === undefined) return '';\n  let s = String(v).replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]/g, '').slice(0, max);\n  if (/^[=+\\-@\\t\\r]/.test(s)) s = \"'\" + s;\n  return s;\n};\nconst j = $input.first().json;\nconst email = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(j.email || '') ? j.email : '';\nconst urgency = ['low', 'medium', 'high'].includes(j.urgency) ? j.urgency : 'medium';\nreturn [{ json: {\n  received_at: j.received_at,\n  // Telegram usernames are [A-Za-z0-9_] only, so '@' + username is safe as-is.\n  telegram_user: /^\\w{4,32}$/.test(j.username || '') ? '@' + j.username : clean(j.first_name, 100),\n  chat_id: String(j.chat_id),\n  name: clean(j.name, 100), company: clean(j.company, 100), email: clean(email, 200),\n  need: clean(j.need), budget: clean(j.budget, 100), urgency,\n  lead_score: j.lead_score, summary: clean(j.summary),\n  raw_message: clean(j.text, 2000), status: 'new',\n} }];"
+      },
+      "id": "e50c9494-11be-54be-9681-85c311f43205",
+      "name": "Build CRM Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "278e51b8-37f5-566d-a98a-24e56c6db430",
+      "name": "Append to Leads Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1540,
+        480
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.admin_chat_id }}",
+        "text": "=🔥 New lead ({{ $('Build CRM Row').first().json.lead_score }}/100, {{ $('Build CRM Row').first().json.urgency }})\nFrom: {{ $('Build CRM Row').first().json.telegram_user }}\nNeed: {{ $('Build CRM Row').first().json.need }}\nBudget: {{ $('Build CRM Row').first().json.budget }}\nSummary: {{ $('Build CRM Row').first().json.summary }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "6c68ab14-fe85-59fe-b918-9905e15ffab3",
+      "name": "Notify Owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1760,
+        480
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Guard (private, text, rate limit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard (private, text, rate limit)": {
+      "main": [
+        [
+          {
+            "node": "Is /start?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is /start?": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LLM Classify & Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Classify & Extract": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM Output": {
+      "main": [
+        [
+          {
+            "node": "Reply to Sender",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lead?": {
+      "main": [
+        [
+          {
+            "node": "Build CRM Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Build CRM Row": {
+      "main": [
+        [
+          {
+            "node": "Append to Leads Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Leads Sheet": {
+      "main": [
+        [
+          {
+            "node": "Notify Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "errAlertTelegram"
+  },
+  "pinData": {},
+  "tags": []
+}

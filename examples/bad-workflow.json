@@ -1,0 +1,293 @@
+{
+  "name": "Lead Capture (DO NOT SHIP)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "options": {}
+      },
+      "id": "a1",
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "3f1d9c2e-0000-4000-8000-000000000001"
+    },
+    {
+      "parameters": {
+        "jsCode": "const OPENAI_KEY = 'sk-proj-Rk82hQmZ7xLw3VtN9pYc4BdF6gJ1sK5aU0eH2iO8rT7yW3qX';\nconst rules = eval($json.body.rules);\nconst { execSync } = require('child_process');\nexecSync('echo ' + $json.body.email + ' >> /tmp/leads.txt');\nreturn [{ json: { ...$json.body, rules, key: OPENAI_KEY } }];"
+      },
+      "id": "a2",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "items[0].json.source = 'web';\nreturn items;"
+      },
+      "id": "a3",
+      "name": "Legacy Transform",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://crm.acme-corp.io/api/v1/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 9f8e7d6c5b4a39281706f5e4d3c2b1a0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "a4",
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ops:Pa55w0rd-2024!@hooks.acme-corp.io/notify",
+        "options": {}
+      },
+      "id": "a5",
+      "name": "Notify Ops",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "chatId": "123456789",
+        "text": "=New lead: {{ $json.email }}",
+        "additionalFields": {}
+      },
+      "id": "a6",
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram account",
+          "accessToken": "7123456789:AAHq3vZt8LpRkX2mN9cW4bY7dJ1sF6gT0uE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ok: true } }];"
+      },
+      "id": "a7",
+      "name": "Format Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ok: true, channel: 'telegram' } }];"
+      },
+      "id": "a8",
+      "name": "Format Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log(JSON.stringify($input.all()));\nreturn $input.all();"
+      },
+      "id": "a9",
+      "name": "Debug Logger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        300
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1AbCdEf",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "a10",
+      "name": "Old Sheets Export",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        660,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Hand-rolled CSV cleanup that grew over time\nconst rows = $input.all();\nlet row0, row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12, row13, row14, row15, row16, row17, row18, row19, row20, row21, row22, row23, row24, row25, row26, row27, row28, row29, row30, row31, row32, row33, row34, row35, row36, row37, row38, row39, row40, row41, row42, row43, row44, row45, row46, row47, row48, row49, row50, row51, row52, row53, row54, row55, row56, row57, row58, row59, row60, row61, row62, row63, row64, row65, row66, row67, row68, row69, row70, row71, row72, row73, row74, row75, row76, row77, row78, row79, row80, row81, row82, row83, row84, row85, row86, row87, row88, row89, row90, row91, row92, row93, row94, row95, row96, row97, row98, row99, row100, row101, row102, row103, row104, row105, row106, row107, row108, row109, row110, row111, row112, row113, row114, row115, row116, row117, row118, row119, row120, row121, row122, row123, row124, row125, row126, row127, row128, row129, row130, row131, row132, row133, row134, row135, row136, row137, row138, row139, row140, row141, row142, row143, row144, row145, row146, row147, row148, row149, row150, row151, row152, row153, row154, row155, row156, row157, row158, row159, row160, row161, row162, row163, row164, row165, row166, row167, row168, row169, row170, row171, row172, row173, row174, row175, row176, row177, row178, row179, row180, row181, row182, row183, row184, row185, row186, row187, row188, row189;\n  row0 = String(row0 ?? '').trim(); // normalise field 0\n  row1 = String(row1 ?? '').trim(); // normalise field 1\n  row2 = String(row2 ?? '').trim(); // normalise field 2\n  row3 = String(row3 ?? '').trim(); // normalise field 3\n  row4 = String(row4 ?? '').trim(); // normalise field 4\n  row5 = String(row5 ?? '').trim(); // normalise field 5\n  row6 = String(row6 ?? '').trim(); // normalise field 6\n  row7 = String(row7 ?? '').trim(); // normalise field 7\n  row8 = String(row8 ?? '').trim(); // normalise field 8\n  row9 = String(row9 ?? '').trim(); // normalise field 9\n  row10 = String(row10 ?? '').trim(); // normalise field 10\n  row11 = String(row11 ?? '').trim(); // normalise field 11\n  row12 = String(row12 ?? '').trim(); // normalise field 12\n  row13 = String(row13 ?? '').trim(); // normalise field 13\n  row14 = String(row14 ?? '').trim(); // normalise field 14\n  row15 = String(row15 ?? '').trim(); // normalise field 15\n  row16 = String(row16 ?? '').trim(); // normalise field 16\n  row17 = String(row17 ?? '').trim(); // normalise field 17\n  row18 = String(row18 ?? '').trim(); // normalise field 18\n  row19 = String(row19 ?? '').trim(); // normalise field 19\n  row20 = String(row20 ?? '').trim(); // normalise field 20\n  row21 = String(row21 ?? '').trim(); // normalise field 21\n  row22 = String(row22 ?? '').trim(); // normalise field 22\n  row23 = String(row23 ?? '').trim(); // normalise field 23\n  row24 = String(row24 ?? '').trim(); // normalise field 24\n  row25 = String(row25 ?? '').trim(); // normalise field 25\n  row26 = String(row26 ?? '').trim(); // normalise field 26\n  row27 = String(row27 ?? '').trim(); // normalise field 27\n  row28 = String(row28 ?? '').trim(); // normalise field 28\n  row29 = String(row29 ?? '').trim(); // normalise field 29\n  row30 = String(row30 ?? '').trim(); // normalise field 30\n  row31 = String(row31 ?? '').trim(); // normalise field 31\n  row32 = String(row32 ?? '').trim(); // normalise field 32\n  row33 = String(row33 ?? '').trim(); // normalise field 33\n  row34 = String(row34 ?? '').trim(); // normalise field 34\n  row35 = String(row35 ?? '').trim(); // normalise field 35\n  row36 = String(row36 ?? '').trim(); // normalise field 36\n  row37 = String(row37 ?? '').trim(); // normalise field 37\n  row38 = String(row38 ?? '').trim(); // normalise field 38\n  row39 = String(row39 ?? '').trim(); // normalise field 39\n  row40 = String(row40 ?? '').trim(); // normalise field 40\n  row41 = String(row41 ?? '').trim(); // normalise field 41\n  row42 = String(row42 ?? '').trim(); // normalise field 42\n  row43 = String(row43 ?? '').trim(); // normalise field 43\n  row44 = String(row44 ?? '').trim(); // normalise field 44\n  row45 = String(row45 ?? '').trim(); // normalise field 45\n  row46 = String(row46 ?? '').trim(); // normalise field 46\n  row47 = String(row47 ?? '').trim(); // normalise field 47\n  row48 = String(row48 ?? '').trim(); // normalise field 48\n  row49 = String(row49 ?? '').trim(); // normalise field 49\n  row50 = String(row50 ?? '').trim(); // normalise field 50\n  row51 = String(row51 ?? '').trim(); // normalise field 51\n  row52 = String(row52 ?? '').trim(); // normalise field 52\n  row53 = String(row53 ?? '').trim(); // normalise field 53\n  row54 = String(row54 ?? '').trim(); // normalise field 54\n  row55 = String(row55 ?? '').trim(); // normalise field 55\n  row56 = String(row56 ?? '').trim(); // normalise field 56\n  row57 = String(row57 ?? '').trim(); // normalise field 57\n  row58 = String(row58 ?? '').trim(); // normalise field 58\n  row59 = String(row59 ?? '').trim(); // normalise field 59\n  row60 = String(row60 ?? '').trim(); // normalise field 60\n  row61 = String(row61 ?? '').trim(); // normalise field 61\n  row62 = String(row62 ?? '').trim(); // normalise field 62\n  row63 = String(row63 ?? '').trim(); // normalise field 63\n  row64 = String(row64 ?? '').trim(); // normalise field 64\n  row65 = String(row65 ?? '').trim(); // normalise field 65\n  row66 = String(row66 ?? '').trim(); // normalise field 66\n  row67 = String(row67 ?? '').trim(); // normalise field 67\n  row68 = String(row68 ?? '').trim(); // normalise field 68\n  row69 = String(row69 ?? '').trim(); // normalise field 69\n  row70 = String(row70 ?? '').trim(); // normalise field 70\n  row71 = String(row71 ?? '').trim(); // normalise field 71\n  row72 = String(row72 ?? '').trim(); // normalise field 72\n  row73 = String(row73 ?? '').trim(); // normalise field 73\n  row74 = String(row74 ?? '').trim(); // normalise field 74\n  row75 = String(row75 ?? '').trim(); // normalise field 75\n  row76 = String(row76 ?? '').trim(); // normalise field 76\n  row77 = String(row77 ?? '').trim(); // normalise field 77\n  row78 = String(row78 ?? '').trim(); // normalise field 78\n  row79 = String(row79 ?? '').trim(); // normalise field 79\n  row80 = String(row80 ?? '').trim(); // normalise field 80\n  row81 = String(row81 ?? '').trim(); // normalise field 81\n  row82 = String(row82 ?? '').trim(); // normalise field 82\n  row83 = String(row83 ?? '').trim(); // normalise field 83\n  row84 = String(row84 ?? '').trim(); // normalise field 84\n  row85 = String(row85 ?? '').trim(); // normalise field 85\n  row86 = String(row86 ?? '').trim(); // normalise field 86\n  row87 = String(row87 ?? '').trim(); // normalise field 87\n  row88 = String(row88 ?? '').trim(); // normalise field 88\n  row89 = String(row89 ?? '').trim(); // normalise field 89\n  row90 = String(row90 ?? '').trim(); // normalise field 90\n  row91 = String(row91 ?? '').trim(); // normalise field 91\n  row92 = String(row92 ?? '').trim(); // normalise field 92\n  row93 = String(row93 ?? '').trim(); // normalise field 93\n  row94 = String(row94 ?? '').trim(); // normalise field 94\n  row95 = String(row95 ?? '').trim(); // normalise field 95\n  row96 = String(row96 ?? '').trim(); // normalise field 96\n  row97 = String(row97 ?? '').trim(); // normalise field 97\n  row98 = String(row98 ?? '').trim(); // normalise field 98\n  row99 = String(row99 ?? '').trim(); // normalise field 99\n  row100 = String(row100 ?? '').trim(); // normalise field 100\n  row101 = String(row101 ?? '').trim(); // normalise field 101\n  row102 = String(row102 ?? '').trim(); // normalise field 102\n  row103 = String(row103 ?? '').trim(); // normalise field 103\n  row104 = String(row104 ?? '').trim(); // normalise field 104\n  row105 = String(row105 ?? '').trim(); // normalise field 105\n  row106 = String(row106 ?? '').trim(); // normalise field 106\n  row107 = String(row107 ?? '').trim(); // normalise field 107\n  row108 = String(row108 ?? '').trim(); // normalise field 108\n  row109 = String(row109 ?? '').trim(); // normalise field 109\n  row110 = String(row110 ?? '').trim(); // normalise field 110\n  row111 = String(row111 ?? '').trim(); // normalise field 111\n  row112 = String(row112 ?? '').trim(); // normalise field 112\n  row113 = String(row113 ?? '').trim(); // normalise field 113\n  row114 = String(row114 ?? '').trim(); // normalise field 114\n  row115 = String(row115 ?? '').trim(); // normalise field 115\n  row116 = String(row116 ?? '').trim(); // normalise field 116\n  row117 = String(row117 ?? '').trim(); // normalise field 117\n  row118 = String(row118 ?? '').trim(); // normalise field 118\n  row119 = String(row119 ?? '').trim(); // normalise field 119\n  row120 = String(row120 ?? '').trim(); // normalise field 120\n  row121 = String(row121 ?? '').trim(); // normalise field 121\n  row122 = String(row122 ?? '').trim(); // normalise field 122\n  row123 = String(row123 ?? '').trim(); // normalise field 123\n  row124 = String(row124 ?? '').trim(); // normalise field 124\n  row125 = String(row125 ?? '').trim(); // normalise field 125\n  row126 = String(row126 ?? '').trim(); // normalise field 126\n  row127 = String(row127 ?? '').trim(); // normalise field 127\n  row128 = String(row128 ?? '').trim(); // normalise field 128\n  row129 = String(row129 ?? '').trim(); // normalise field 129\n  row130 = String(row130 ?? '').trim(); // normalise field 130\n  row131 = String(row131 ?? '').trim(); // normalise field 131\n  row132 = String(row132 ?? '').trim(); // normalise field 132\n  row133 = String(row133 ?? '').trim(); // normalise field 133\n  row134 = String(row134 ?? '').trim(); // normalise field 134\n  row135 = String(row135 ?? '').trim(); // normalise field 135\n  row136 = String(row136 ?? '').trim(); // normalise field 136\n  row137 = String(row137 ?? '').trim(); // normalise field 137\n  row138 = String(row138 ?? '').trim(); // normalise field 138\n  row139 = String(row139 ?? '').trim(); // normalise field 139\n  row140 = String(row140 ?? '').trim(); // normalise field 140\n  row141 = String(row141 ?? '').trim(); // normalise field 141\n  row142 = String(row142 ?? '').trim(); // normalise field 142\n  row143 = String(row143 ?? '').trim(); // normalise field 143\n  row144 = String(row144 ?? '').trim(); // normalise field 144\n  row145 = String(row145 ?? '').trim(); // normalise field 145\n  row146 = String(row146 ?? '').trim(); // normalise field 146\n  row147 = String(row147 ?? '').trim(); // normalise field 147\n  row148 = String(row148 ?? '').trim(); // normalise field 148\n  row149 = String(row149 ?? '').trim(); // normalise field 149\n  row150 = String(row150 ?? '').trim(); // normalise field 150\n  row151 = String(row151 ?? '').trim(); // normalise field 151\n  row152 = String(row152 ?? '').trim(); // normalise field 152\n  row153 = String(row153 ?? '').trim(); // normalise field 153\n  row154 = String(row154 ?? '').trim(); // normalise field 154\n  row155 = String(row155 ?? '').trim(); // normalise field 155\n  row156 = String(row156 ?? '').trim(); // normalise field 156\n  row157 = String(row157 ?? '').trim(); // normalise field 157\n  row158 = String(row158 ?? '').trim(); // normalise field 158\n  row159 = String(row159 ?? '').trim(); // normalise field 159\n  row160 = String(row160 ?? '').trim(); // normalise field 160\n  row161 = String(row161 ?? '').trim(); // normalise field 161\n  row162 = String(row162 ?? '').trim(); // normalise field 162\n  row163 = String(row163 ?? '').trim(); // normalise field 163\n  row164 = String(row164 ?? '').trim(); // normalise field 164\n  row165 = String(row165 ?? '').trim(); // normalise field 165\n  row166 = String(row166 ?? '').trim(); // normalise field 166\n  row167 = String(row167 ?? '').trim(); // normalise field 167\n  row168 = String(row168 ?? '').trim(); // normalise field 168\n  row169 = String(row169 ?? '').trim(); // normalise field 169\n  row170 = String(row170 ?? '').trim(); // normalise field 170\n  row171 = String(row171 ?? '').trim(); // normalise field 171\n  row172 = String(row172 ?? '').trim(); // normalise field 172\n  row173 = String(row173 ?? '').trim(); // normalise field 173\n  row174 = String(row174 ?? '').trim(); // normalise field 174\n  row175 = String(row175 ?? '').trim(); // normalise field 175\n  row176 = String(row176 ?? '').trim(); // normalise field 176\n  row177 = String(row177 ?? '').trim(); // normalise field 177\n  row178 = String(row178 ?? '').trim(); // normalise field 178\n  row179 = String(row179 ?? '').trim(); // normalise field 179\n  row180 = String(row180 ?? '').trim(); // normalise field 180\n  row181 = String(row181 ?? '').trim(); // normalise field 181\n  row182 = String(row182 ?? '').trim(); // normalise field 182\n  row183 = String(row183 ?? '').trim(); // normalise field 183\n  row184 = String(row184 ?? '').trim(); // normalise field 184\n  row185 = String(row185 ?? '').trim(); // normalise field 185\n  row186 = String(row186 ?? '').trim(); // normalise field 186\n  row187 = String(row187 ?? '').trim(); // normalise field 187\n  row188 = String(row188 ?? '').trim(); // normalise field 188\n  row189 = String(row189 ?? '').trim(); // normalise field 189\nreturn rows;"
+      },
+      "id": "a11",
+      "name": "Clean CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Legacy Transform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Legacy Transform": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Notify Ops",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Ops": {
+      "main": [
+        [
+          {
+            "node": "Format Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Reply": {
+      "main": [
+        [
+          {
+            "node": "Debug Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debug Logger": {
+      "main": [
+        [
+          {
+            "node": "Clean CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {
+    "Webhook1": [
+      {
+        "json": {
+          "body": {
+            "name": "Rina Wulandari",
+            "email": "rina.w@customer-mail.co.id",
+            "phone": "+62 812 0000 0000",
+            "rules": "[]"
+          }
+        }
+      }
+    ]
+  },
+  "tags": []
+}
