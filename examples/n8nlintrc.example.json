@@ -1,0 +1,14 @@
+{
+  "failOn": "error",
+  "ignore": ["workflows/archive/**"],
+  "rules": {
+    "hygiene/default-node-name": "off",
+    "security/webhook-no-auth": "error",
+    "reliability/large-code-node": ["warning", { "maxLines": 250 }],
+    "security/insecure-http": ["warning", { "allowHosts": ["legacy-erp.internal.example"] }],
+    "hygiene/outdated-type-version": ["info", { "level": "minor" }]
+  },
+  "overrides": [
+    { "files": ["templates/**"], "rules": { "hygiene/missing-metadata": "off" } }
+  ]
+}
