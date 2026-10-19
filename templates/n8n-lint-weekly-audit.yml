@@ -1,0 +1,53 @@
+# Weekly audit of every workflow in the repository, including ones nobody has
+# touched in a while. Reports everything (fail-on: none) as a job summary and
+# a downloadable JSON artifact, so new rules in n8n-lint catch old workflows too.
+# Copy to .github/workflows/n8n-lint-weekly.yml.
+name: n8n-lint weekly audit
+
+on:
+  schedule:
+    - cron: "0 1 * * 1"   # Mondays 01:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Lint all workflows (JSON)
+        uses: vhmns14/n8n-lint@v0
+        with:
+          path: .
+          format: json
+          fail-on: none
+          args: --output n8n-lint-report.json
+      - name: Lint all workflows (text)
+        uses: vhmns14/n8n-lint@v0
+        with:
+          path: .
+          format: pretty
+          fail-on: none
+          args: --output n8n-lint-report.txt
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## n8n-lint weekly audit"
+            echo
+            node -e 'const r=require("./n8n-lint-report.json").summary; console.log(`**${r.errors}** errors, **${r.warnings}** warnings, **${r.infos}** info across ${r.workflows} workflows.`)'
+            echo
+            echo '```'
+            cat n8n-lint-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n8n-lint-report
+          path: n8n-lint-report.*

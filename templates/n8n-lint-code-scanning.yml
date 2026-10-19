@@ -1,0 +1,31 @@
+# Lint n8n workflow exports and send results to GitHub code scanning
+# (Security tab, plus inline alerts on pull requests).
+# Code scanning is free for public repositories; private repositories need
+# GitHub Advanced Security / Code Security.
+# Copy to .github/workflows/n8n-lint-code-scanning.yml.
+name: n8n-lint code scanning
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write   # upload SARIF
+  actions: read            # needed by upload-sarif on private repositories
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: vhmns14/n8n-lint@v0
+        with:
+          path: workflows
+          sarif: "true"
+          format: github
+          fail-on: error

@@ -1,0 +1,29 @@
+# Lint n8n workflow exports on every pull request.
+# Copy to .github/workflows/n8n-lint.yml and set `path` to where your exports live.
+name: n8n-lint
+
+on:
+  pull_request:
+    paths:
+      - "workflows/**.json"
+      - ".n8nlintrc.json"
+  push:
+    branches: [main]
+    paths:
+      - "workflows/**.json"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: vhmns14/n8n-lint@v0
+        with:
+          path: workflows
+          fail-on: error   # warnings show as annotations but do not block the merge

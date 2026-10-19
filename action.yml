@@ -1,0 +1,98 @@
+name: n8n-lint
+description: Lint n8n workflow JSON exports for leaked secrets, open webhooks, missing error handling, and other mistakes.
+author: vahmi sofyan
+branding:
+  icon: check-circle
+  color: orange
+
+inputs:
+  path:
+    description: Files or directories to lint, space-separated.
+    required: false
+    default: "."
+  fail-on:
+    description: Fail the step when a finding is at least this severe (error, warning, info, none).
+    required: false
+    default: error
+  format:
+    description: Console output format. "github" turns findings into inline PR annotations.
+    required: false
+    default: github
+  config:
+    description: Path to a config file. Defaults to the nearest .n8nlintrc.json.
+    required: false
+    default: ""
+  sarif:
+    description: "Also write SARIF and upload it to GitHub code scanning (needs security-events: write)."
+    required: false
+    default: "false"
+  sarif-file:
+    description: Where to write the SARIF report.
+    required: false
+    default: n8n-lint.sarif
+  args:
+    description: Extra CLI arguments, for example --rule hygiene/default-node-name=off
+    required: false
+    default: ""
+
+outputs:
+  exit-code:
+    description: The linter's exit code (0 clean, 1 findings at or above fail-on, 2 usage or parse error).
+    value: ${{ steps.lint.outputs.exit-code }}
+  sarif-file:
+    description: Path of the SARIF report, when sarif is "true".
+    value: ${{ steps.lint.outputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check Node.js
+      shell: bash
+      run: |
+        if ! command -v node >/dev/null; then echo "::error::n8n-lint needs Node.js 20+ on the runner (add actions/setup-node)"; exit 2; fi
+        major="$(node -p 'process.versions.node.split(".")[0]')"
+        if [ "$major" -lt 20 ]; then echo "::error::n8n-lint needs Node.js 20+, found $(node -v)"; exit 2; fi
+
+    - name: Run n8n-lint
+      id: lint
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_FORMAT: ${{ inputs.format }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_SARIF_FILE: ${{ inputs.sarif-file }}
+        INPUT_ARGS: ${{ inputs.args }}
+      run: |
+        set +e
+        args=(--format "$INPUT_FORMAT" --fail-on "$INPUT_FAIL_ON")
+        [ -n "$INPUT_CONFIG" ] && args+=(--config "$INPUT_CONFIG")
+        if [ "$INPUT_SARIF" = "true" ]; then
+          args+=(--sarif "$INPUT_SARIF_FILE")
+          echo "sarif-file=$INPUT_SARIF_FILE" >> "$GITHUB_OUTPUT"
+        fi
+        # word-split path and args on purpose: both are space-separated lists
+        # shellcheck disable=SC2086
+        node "$GITHUB_ACTION_PATH/dist/cli.js" $INPUT_PATH "${args[@]}" $INPUT_ARGS
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        exit 0
+
+    - name: Upload SARIF to code scanning
+      if: ${{ always() && inputs.sarif == 'true' && steps.lint.outputs.exit-code != '2' }}
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        category: n8n-lint
+
+    - name: Apply fail-on
+      if: ${{ always() }}
+      shell: bash
+      env:
+        CODE: ${{ steps.lint.outputs.exit-code }}
+      run: |
+        if [ "$CODE" != "0" ]; then
+          echo "n8n-lint exited with $CODE"
+          exit "$CODE"
+        fi

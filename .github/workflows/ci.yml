@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: dist/ is up to date
+        run: |
+          npm run build
+          git diff --exit-code -- dist || (echo "::error::dist/ is stale. Run npm run build and commit it." && exit 1)
+
+  self-lint:
+    # Runs the Action from this checkout against the examples and real fixtures.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Good example passes
+        uses: ./
+        with:
+          path: examples/good-workflow.json
+          fail-on: warning
+      - name: Real-world fixtures have no errors
+        uses: ./
+        with:
+          path: test/fixtures/real
+          fail-on: error
+      - name: Bad example fails (as it should)
+        id: bad
+        uses: ./
+        continue-on-error: true
+        with:
+          path: examples/bad-workflow.json
+          format: pretty
+      - name: Check the bad example was caught
+        run: test "${{ steps.bad.outcome }}" = "failure"
